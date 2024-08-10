@@ -1,0 +1,456 @@
+.TH MONEROD "1" "AUGUST 2024" "Fluorine Fermi 0.18.3.3" "MONEROD MANUAL"
+.SH NAME
+monerod \- Connects you to Monero network
+.SH SYNOPSIS
+.B monerod
+[\fI\,options|settings\/\fR] [\fI\,daemon_command...\/\fR]
+.SH DESCRIPTION
+.\" Add any additional description here
+.PP
+The Monero daemon \fBmonerod\fR keeps your computer synced up with the Monero network.
+
+It downloads and validates the blockchain from the p2p network.
+
+\fBmonerod\fR is entirely decoupled from your wallet.
+
+\fBmonerod\fR does not access your private keys \- it is not aware of your transactions and balance.
+
+This allows you to run \fBmonerod\fR on a separate computer or in the cloud.
+
+In fact, you can connect to a remote \fBmonerod\fR instance provided by a semi-trusted 3rd party. Such 3rd party will not be able to steal your funds. This is very handy for learning and experimentation.
+
+However, there are privacy and reliability implications to using a remote, untrusted node. For any real business you should be running your own full node.
+
+You can run \fBmonerod\fR in two modes,
+.sp 2 
+stagenet for learning and experimentation.
+
+\fB.\/monerod \--stagenet \--detach\fR        # run as a daemon in background
+.br
+\fBtail \-f ~/.bitmonero/stagenet/bitmonero.log\fR  # watch the logs
+.br
+\fB.\/monerod \--stagenet exit\fR           # ask daemon to exit gracefully
+
+mainnet is when you want to deal with the real XMR.
+
+\fB.\/monerod \--detach\fR        # run as a daemon in background
+.br
+\fBtail \-f ~/.bitmonero/stagenet/bitmonero.log\fR  # watch the logs
+.br
+\fB.\/monerod exit\fR           # ask daemon to exit gracefully
+
+.SH Options:
+Arguments in brackets are default
+.br
+.TP
+\fB\--help\fR
+.br
+Produce help message
+.TP
+\fB\--version\fR                            
+Output version information
+.TP
+\fB\--os-version\fR                          
+OS for which this executable was compiled.
+.TP
+\fB\--check-updates\fR arg (=notify)
+         Check for new versions of monero: [disabled|notify|download|update]
+
+
+.SS Pick Monero network (blockchain):
+.TP
+\fB\--testnet\fR
+Run on testnet. The wallet must be launched with /--testnet flag.
+.TP
+\fB\--stagenet\fR
+Run on stagenet. The wallet must be launched with /--stagenet flag.
+
+
+.SS Server Config:
+.TP
+\fB\--config-file\fR arg
+.br
+(=~/.bitmonero/bitmonero.conf, 
+.br
+~/.bitmonero/testnet/bitmonero.conf if 'testnet', 
+.br
+~/.bitmonero/stagenet/bitmonero.conf if 'stagenet')
+Specify configuration file
+.TP
+\fB\--data-dir\fR arg
+(=~/.bitmonero,
+.br
+~/.bitmonero/testnet if 'testnet',
+.br
+~/.bitmonero/stagenet if 'stagenet')
+.br
+Specify data directory
+.TP
+\fB\--pidfile\fR arg                         
+File path to write the daemon's PID to (optional, requires \--detach)
+.TP
+\fB\--detach\fR
+Run as daemon
+.TP
+\fB\--non-interactive\fR                     
+Run non-interactive
+.TP
+\fB\--no-zmq\fR
+Disable ZMQ RPC server
+.TP
+\fB\--no-igd\fR                    
+Disable UPnP port mapping
+.TP
+\fB\--max-txpool-weight\fR arg (=648000000)
+Set maximum txpool weight in bytes.
+.TP
+\fB\--enforce-dns-checkpointing\fR
+checkpoints from DNS server will be enforced
+.TP
+\fB\--disable-dns-checkpoints\fR
+Do not retrieve checkpoints from DNS
+
+
+.SS Logging:
+.TP
+\fB\--log-file\fR arg
+Specify log file
+.br
+(=~/.bitmonero/bitmonero.log,
+.br
+~/.bitmonero/testnet/bitmonero.log if 'testnet',
+.br
+~/.bitmonero/stagenet/bitmonero.log if 'stagenet')
+.TP
+\fB\--log-level\fR arg
+.TP
+\fB\--max-log-file-size\fR arg (=104850000)
+Specify maximum log file size [B]
+.TP
+\fB\--max-log-files\fR arg (=50)
+Specify maximum number of rotated log
+files to be saved (no limit by setting to 0)
+
+
+.SS P2P network:
+.TP
+\fB\--p2p-bind-ip\fR arg (=0.0.0.0)
+Interface for p2p network protocol (IPv4)
+.TP
+\fB\--p2p-bind-port\fR arg (=18080, 28080 if 'testnet', 38080 if 'stagenet')
+ Port for p2p network protocol (IPv4)
+.TP
+\fB\--p2p-external-port\fR arg (=0)
+External port for p2p network protocol (if port forwarding used with NAT)
+.TP
+\fB\--p2p-use-ipv6\fR
+Enable IPv6 for p2p
+.TP
+\fB\--p2p-bind-ipv6-address\fR arg (=::)
+Interface for p2p network protocol (IPv6)
+.TP
+\fB\--p2p-bind-port-ipv6\fR arg (=18080, 28080 if 'testnet', 38080 if 'stagenet')
+ Port for p2p network protocol (IPv6)
+.TP
+\fB\--p2p-ignore-ipv4\fR
+Ignore unsuccessful IPv4 bind for p2p
+.TP
+\fB\--igd\fR arg (=delayed)
+UPnP port mapping (disabled, enabled, delayed)
+.TP
+\fB\--hide-my-port\fR              
+Do not announce yourself as peerlist candidate
+.TP
+\fB\--seed-node\fR arg
+Connect to a node to retrieve peer addresses, and disconnect
+.TP
+\fB\--add-peer\fR arg
+Manually add peer to local peerlist
+.TP
+\fB\--add-priority-node\fR arg
+Specify list of peers to connect to and attempt to keep the connection open
+.TP
+\fB\--add-exclusive-node\fR arg
+Specify list of peers to connect to only. If this option is given the options add-priority-node and seed-node are ignored
+.TP
+\fB\--out-peers\fR arg (=-1)
+ set max number of out peers
+.TP
+\fB\--in-peers\fR arg (=-1)
+ set max number of in peers
+.TP
+\fB\--limit-rate-up\fR arg (=2048)
+ set limit-rate-up [kB/s]
+.TP
+\fB\--limit-rate-down\fR arg (=8192)
+ set limit-rate-down [kB/s]
+.TP
+\fB\--limit-rate\fR arg (=-1)
+ set limit-rate [kB/s]
+.TP
+\fB\--max-connections-per-ip\fR arg (=1)
+Maximum number of connections allowed from the same IP address
+.TP
+\fB\--offline\fR
+Do not listen for peers, nor connect to any
+.TP
+\fB\--allow-local-ip\fR
+Allow local ip add to peer list, mostly in debug purposes
+
+
+.SS Tor/I2P and proxies:
+.TP
+\fB\--proxy\fR arg <socks-ip:port>
+Network communication through proxy:  i.e. "127.0.0.1:9050"
+.TP
+\fB\--tx-proxy\fR arg <network-type>,<socks-ip:port>[,max_connections][,disable_noise]
+Send local txes through proxy:  i.e. "tor,127.0.0.1:9050,100,disable_noise"
+.TP
+\fB\--proxy-allow-dns-leaks\fR
+Allow DNS leaks outside of proxy
+.TP
+\fB\--anonymous-inbound\fR arg <hidden-service-address>,<[bind-ip:]port>[,max_connections]
+Allow anonymous incoming connections to your onionized P2P interface. i.e. "x.onion,127.0.0.1:18083,100"
+.TP
+\fB\--pad-transactions\fR           
+Pad relayed transactions to help defend against traffic volume analysis
+
+
+.SS Node RPC API Options:
+.TP
+\fB\--public-node\fR
+Allow other users to use the node as a remote (restricted RPC mode, view-only commands) and advertise it over P2P
+.TP
+\fB\--rpc-bind-ip\fR arg (=127.0.0.1)
+Specify IP to bind RPC server
+.TP
+\fB\--rpc-bind-port\fR arg (=18081, 28081 if 'testnet', 38081 if 'stagenet')
+Port for RPC server
+.TP
+\fB\--rpc-bind-ipv6-address\fR arg (=::1)
+Specify IPv6 address to bind RPC server
+.TP
+\fB\--rpc-use-ipv6\fR
+Allow IPv6 for RPC
+.TP
+\fB\--rpc-ignore-ipv4\fR
+Ignore unsuccessful IPv4 bind for RPC
+.TP
+\fB\--restricted-rpc\fR
+Restrict RPC to view only commands and do not return privacy sensitive data in RPC calls
+.TP
+\fB\--rpc-restricted-bind-ip\fR arg (=127.0.0.1)
+Specify IP to bind restricted RPC server
+.TP
+\fB\--rpc-restricted-bind-port\fR arg
+Port for restricted RPC server
+.TP
+\fB\--rpc-restricted-bind-ipv6-address\fR arg (=::1)
+Specify IPv6 address to bind restricted RPC server
+.TP
+\fB\--confirm-external-bind\fR              
+Confirm rpc-bind-ip value is NOT a loopback (local) IP
+.TP
+\fB\--rpc-login\fR arg
+Specify username[:password] required for RPC server
+.TP
+\fB\--rpc-access-control-origins\fR arg
+Specify a comma separated list of origins to allow cross origin resource sharing
+.TP
+\fB\--rpc-ssl\fR arg (=autodetect)
+Enable SSL on RPC connections: enabled|disabled|autodetect
+.TP
+\fB\--rpc-ssl-private-key\fR arg
+Path to a PEM format private key
+.TP
+\fB\--rpc-ssl-certificate\fR arg
+Path to a PEM format certificate
+.TP
+\fB\--rpc-ssl-ca-certificates\fR arg
+Path to file containing concatenated PEM format certificate(s) to replace system CA(s).
+.TP
+\fB\--rpc-ssl-allowed-fingerprints\fR arg
+List of certificate fingerprints to allow
+.TP
+\fB\--rpc-ssl-allow-chained\fR
+Allow user (via --rpc-ssl-certificates) chain certificates
+.TP
+\fB\--rpc-ssl-allow-any-cert\fR
+Allow any peer certificate
+.TP
+\fB\--disable-rpc-ban\fR
+Do not ban hosts on RPC errors
+.TP
+\fB\--rpc-payment-address arg\fR
+Restrict RPC to clients sending micropayment to this address
+.TP
+\fB\--rpc-payment-difficulty\fR arg (=1000)
+Restrict RPC to clients sending micropayment at this difficulty
+.TP
+\fB\--rpc-payment-credits\fR arg (=100)
+Restrict RPC to clients sending micropayment, yields that many credits per payment
+.TP
+\fB\--rpc-payment-allow-free-loopback\fR
+Allow free access from the loopback address (ie, the local host)
+
+
+.SS Monero notifications:
+.TP
+\fB\--block-notify\fR arg
+Run a program for each new block, '%s' will be replaced by the block hash
+.TP
+\fB\--block-rate-notify\fR arg
+Run a program when the block rate undergoes large fluctuations. This might be a sign of large amounts of
+hash rate going on and off the Monero network, and thus be of potential interest in predicting attacks. %t will be replaced by the number of minutes
+for the observation window, %b by the number of blocks observed within that window, and %e by the number of blocks that was expected in that window. It is
+suggested that this notification is used to automatically increase the number of confirmations required before a payment is acted upon.
+.TP
+\fB\--reorg-notify\fR arg
+Run a program for each reorg, '%s' will be replaced by the split height, '%h' will be replaced by the new blockchain height, '%n' will be replaced by the number of new blocks in the new chain,
+and '%d' will be replaced by the number of blocks discarded from the old chain
+
+
+.SS monerod Performance:
+.TP
+\fB\--sync-pruned-blocks\fR
+Allow syncing from nodes with only pruned blocks
+.TP
+\fB\--prune-blockchain\fR
+Prune blockchain
+.TP
+\fB\--db-sync-mode\fR arg (=fast:async:250000000bytes)
+Specify sync option, using format [safe|fast|fastest]:[sync|async]:[<nblocks_per_sync>[blocks]|<nbytes_per_sync> [bytes]].
+.TP
+\fB\--max-concurrency\fR arg (=0)
+Max number of threads to use for a parallel job
+.TP
+\fB\--prep-blocks-threads\fR arg (=4)
+Max number of threads to use when preparing block hashes in groups.
+.TP
+\fB\--fast-block-sync\fR arg (=1)
+Sync up most of the way by using embedded, known block hashes.
+.TP
+\fB\--block-sync-size\fR arg (=0)
+How many blocks to sync at once during chain synchronization (0 = adaptive).
+.TP
+\fB\--block-download-max-size\fR arg (=0)
+Set maximum size of block download queue in bytes (0 for default)
+.TP
+\fB\--no-sync\fR                   
+Don't synchronize the blockchain with other peers
+.TP
+\fB\--bootstrap-daemon-address\fR arg
+URL of a 'bootstrap' remote daemon that the connected wallets can use while this daemon is still not fully synced. Use 'auto' to enable automatic public
+nodes discovering and bootstrap daemon switching
+.TP
+\fB\--bootstrap-daemon-login\fR arg
+Specify username:password for the bootstrap daemon login
+.TP
+\fB\--bootstrap-daemon-proxy\fR arg <ip>:<port> 
+socks proxy to use for bootstrap daemon connections
+.TP
+\fB\--show-time-stats\fR arg (=0)
+Show time-stats when processing blocks/txs and disk synchronization.
+.TP
+\fB\--extra-messages-file\fR arg
+Specify file for extra messages to include into coinbase transactions
+.TP
+\fB\--db-salvage\fR
+Try to salvage a blockchain database if it seems corrupted
+.TP
+\fB\--tos-flag\fR arg (=-1)
+set TOS flag
+
+
+.SS Mining
+.TP
+\fB\--start-mining\fR arg
+Specify wallet address to mining for
+.TP
+\fB\--mining-threads\fR arg
+Specify mining threads count
+.TP
+\fB\--bg-mining-enable\fR
+enable background mining
+.TP
+\fB\--bg-mining-ignore-battery\fR
+if true, assumes plugged in when unable to query system power status
+.TP
+\fB\--bg-mining-min-idle-interval\fR arg
+Specify min lookback interval in seconds for determining idle state
+.TP
+\fB\--bg-mining-idle-threshold\fR arg
+Specify minimum avg idle percentage over lookback interval
+.TP
+\fB\--bg-mining-miner-target\fR arg
+Specify maximum percentage cpu use by miner(s)
+
+
+
+.SS Testing
+.TP
+\fB\--keep-alt-blocks\fR
+Keep alternative blocks on restart
+.TP
+\fB\--test-dbg-lock-sleep\fR arg (=0)
+Sleep time in ms, defaults to 0 (off), used to debug before/after locking mutex. Values 100 to 1000 are good for tests.
+.TP
+\fB\--test-drop-download\fR
+For net tests: in download, discard ALL blocks instead checking/saving them (very fast)
+.TP
+\fB\--test-drop-download-height\fR arg (=0)
+Like test-drop-download but discards only after around certain height
+.TP
+\fB\--keep-fakechain\fR
+Don't delete any existing database when in fakechain mode.
+.TP
+\fB\--regtest\fR
+Run in a regression testing mode.
+.TP
+\fB\--fixed-difficulty\fR arg (=0)
+Fixed difficulty used for testing.
+
+
+
+
+.SS Legacy Options
+.TP
+\fB\--ban-list\fR arg
+Specify ban list file, one IP address per line
+.TP
+\fB\--enable-dns-blocklist\fR      
+Apply realtime blocklist from DNS
+.TP
+\fB\--zmq-pub\fR arg
+Address for ZMQ pub - tcp://ip:port or ipc://path
+.TP
+\fB\--zmq-rpc-bind-ip\fR arg (=127.0.0.1)
+IP for ZMQ RPC server to listen on
+.TP
+\fB\--zmq-rpc-bind-port\fR arg (=18082, 28082 if 'testnet', 38082 if 'stagenet')
+Port for ZMQ RPC server to listen on
+.TP
+\fB\--fluffy-blocks\fR                       Relay blocks as fluffy blocks (obsolete, now default)
+.TP
+\fB\--no-fluffy-blocks\fR                    Relay blocks as normal blocks
+
+
+
+
+.SS "Exit status:"
+.TP
+0
+if OK,
+.TP
+1
+if minor problems
+.SH AUTHOR
+Written by @Justxd22.
+.SH "REPORTING BUGS"
+Report any bugs to <https://github.com/monero-project/monero/issues>
+.SH COPYRIGHT
+Copyright (c) 2014-2022 The Monero Project.
+.br
+Portions Copyright (c) 2012-2013 The Cryptonote developers.
+.SH "SEE ALSO"
+Full documentation <https://getmonero.dev/interacting/monerod.html>
