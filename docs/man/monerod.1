@@ -21,24 +21,6 @@ In fact, you can connect to a remote \fBmonerod\fR instance provided by a semi-t
 
 However, there are privacy and reliability implications to using a remote, untrusted node. For any real business you should be running your own full node.
 
-You can run \fBmonerod\fR in two modes,
-.sp 2 
-stagenet for learning and experimentation.
-
-\fB.\/monerod \--stagenet \--detach\fR        # run as a daemon in background
-.br
-\fBtail \-f ~/.bitmonero/stagenet/bitmonero.log\fR  # watch the logs
-.br
-\fB.\/monerod \--stagenet exit\fR           # ask daemon to exit gracefully
-
-mainnet is when you want to deal with the real XMR.
-
-\fB.\/monerod \--detach\fR        # run as a daemon in background
-.br
-\fBtail \-f ~/.bitmonero/stagenet/bitmonero.log\fR  # watch the logs
-.br
-\fB.\/monerod exit\fR           # ask daemon to exit gracefully
-
 .SH Options:
 Arguments in brackets are default
 .br
@@ -54,16 +36,18 @@ Output version information
 OS for which this executable was compiled.
 .TP
 \fB\--check-updates\fR arg (=notify)
-         Check for new versions of monero: [disabled|notify|download|update]
+Check for new versions of monero: [disabled|notify|download|update]
 
 
 .SS Pick Monero network (blockchain):
 .TP
+By default monerod runs on --mainnet
+.TP
 \fB\--testnet\fR
-Run on testnet. The wallet must be launched with /--testnet flag.
+Run on testnet. The wallet must be launched with --testnet flag.
 .TP
 \fB\--stagenet\fR
-Run on stagenet. The wallet must be launched with /--stagenet flag.
+Run on stagenet. The wallet must be launched with --stagenet flag.
 
 
 .SS Server Config:
@@ -75,7 +59,8 @@ Run on stagenet. The wallet must be launched with /--stagenet flag.
 ~/.bitmonero/testnet/bitmonero.conf if 'testnet', 
 .br
 ~/.bitmonero/stagenet/bitmonero.conf if 'stagenet')
-Specify configuration file
+.br
+Specify full path to configuration file, By default monerod looks for bitmonero.conf in Monero data directory.
 .TP
 \fB\--data-dir\fR arg
 (=~/.bitmonero,
@@ -84,7 +69,7 @@ Specify configuration file
 .br
 ~/.bitmonero/stagenet if 'stagenet')
 .br
-Specify data directory
+Specify full path for data directory, This is where the blockchain, log files, and p2p network memory are stored. 
 .TP
 \fB\--pidfile\fR arg                         
 File path to write the daemon's PID to (optional, requires \--detach)
@@ -93,7 +78,7 @@ File path to write the daemon's PID to (optional, requires \--detach)
 Run as daemon
 .TP
 \fB\--non-interactive\fR                     
-Run non-interactive
+Run non-interactive, Do not require tty in a foreground mode. Helpful when running in a container. By default monerod runs in a foreground and opens stdin for reading.
 .TP
 \fB\--no-zmq\fR
 Disable ZMQ RPC server
@@ -102,10 +87,11 @@ Disable ZMQ RPC server
 Disable UPnP port mapping
 .TP
 \fB\--max-txpool-weight\fR arg (=648000000)
-Set maximum txpool weight in bytes.
+Set maximum txpool weight in bytes. These are transactions pending for confirmations (not included in any block).
 .TP
 \fB\--enforce-dns-checkpointing\fR
-checkpoints from DNS server will be enforced
+checkpoints from DNS server will be enforced, The emergency checkpoints set by \fBMoneroPulse\fR operators will be enforced. It is probably a good idea to set enforcing for unattended nodes.
+If encountered block hash does not match corresponding checkpoint, the local blockchain will be rolled back a few blocks, effectively blocking following what MoneroPulse operators consider invalid fork. The log entry will be produced: \fBERROR Local blockchain failed to pass a checkpoint, rolling back!\fR Eventually, the alternative (“fixed”) fork will get heavier and the node will follow it, leaving the “invalid” fork behind.
 .TP
 \fB\--disable-dns-checkpoints\fR
 Do not retrieve checkpoints from DNS
@@ -114,18 +100,20 @@ Do not retrieve checkpoints from DNS
 .SS Logging:
 .TP
 \fB\--log-file\fR arg
-Specify log file
 .br
 (=~/.bitmonero/bitmonero.log,
 .br
 ~/.bitmonero/testnet/bitmonero.log if 'testnet',
 .br
 ~/.bitmonero/stagenet/bitmonero.log if 'stagenet')
+.br
+Specify Full path log file
 .TP
-\fB\--log-level\fR arg
+\fB\--log-level\fR arg (=0)
+0-4 with 0 being minimal logging and 4 being full tracing. These are general presets and do not directly map to severity levels.
 .TP
 \fB\--max-log-file-size\fR arg (=104850000)
-Specify maximum log file size [B]
+Specify maximum log file size [B], Once log file grows past that limit, monerod creates the next log file with a UTC timestamp postfix -YYYY-MM-DD-HH-MM-SS.
 .TP
 \fB\--max-log-files\fR arg (=50)
 Specify maximum number of rotated log
@@ -430,20 +418,360 @@ IP for ZMQ RPC server to listen on
 \fB\--zmq-rpc-bind-port\fR arg (=18082, 28082 if 'testnet', 38082 if 'stagenet')
 Port for ZMQ RPC server to listen on
 .TP
-\fB\--fluffy-blocks\fR                       Relay blocks as fluffy blocks (obsolete, now default)
+\fB\--fluffy-blocks\fR
+Relay blocks as fluffy blocks (obsolete, now default)
 .TP
-\fB\--no-fluffy-blocks\fR                    Relay blocks as normal blocks
+\fB\--no-fluffy-blocks\fR
+Relay blocks as normal blocks
 
 
+.SH Daemon commands
+Commands give access to specific services provided by the daemon. Commands are executed against the running daemon.
+.br
+Their names follow the \fBcommand_name\fR pattern.
 
 
-.SS "Exit status:"
+.SS Info:
 .TP
-0
-if OK,
+\fBhelp [<command>]\fR
+Show the help section or the documentation about a <command>.
 .TP
-1
-if minor problems
+\fBapropos <keyword> [<keyword> ...]\fR
+Search all command descriptions for keyword(s).
+.TP
+\fBversion\fR
+Print version information.
+.TP
+\fBstatus\fR
+Show the current status.
+.TP
+\fBprint_net_stats\fR
+Print network statistics.
+
+
+.SS P2P Network:
+.TP
+\fBprint_pl [white] [gray] [pruned] [publicrpc] [<limit>]\fR
+Print the current peer list.
+.TP
+\fBprint_pl_stats\fR
+Show the full peer list statistics (white vs gray peers). White peers are any peers your node has completed a handshake with. Grey nodes are nodes that your node hasn’t tried to connect to yet.
+.TP
+\fBprint_cn\fR
+Show connected peers with connection initiative (incoming/outgoing) and other stats.
+.TP
+\fBban [<IP>|@<filename>] [<seconds>]\fR
+Ban a given <IP> or list of IPs from a file for a given amount of <seconds>. By default the ban is for 24h.
+.TP
+\fBbans\fR
+.br
+Show the currently banned IPs.
+.B Example: 187.63.135.161 banned for 86397 seconds
+.TP
+\fBbanned <address>\fR
+Check whether an <address> is banned.
+.TP
+\fBunban <address>\fR
+Unban a given <IP>.
+.TP
+\fBin_peers <max_number>\fR
+Set the <max_number> of incoming connections from other peers.
+.TP
+\fBout_peers <max_number>\fR
+Set the <max_number> of outgoing connections to other peers.
+.TP
+\fBlimit [<kB/s>]\fR
+Get or set the download and upload limit.
+.TP
+\fBlimit_down [<kB/s>]\fR
+Get or set the download limit.
+.TP
+\fBlimit_up [<kB/s>]\fR
+Get or set the upload limit.
+
+
+
+
+.SS Transaction pool:
+
+.TP
+\fBflush_cache [bad-txs] [bad-blocks]\fR
+Flush the specified cache(s).
+.TP
+\fBflush_txpool [<txid>]\fR
+Flush a transaction from the tx pool by its <txid>, or the whole tx pool if <txid> was not provided.
+.TP
+\fBprint_pool\fR
+Print the transaction pool using a long verbose format.
+.TP
+\fBprint_pool_sh\fR
+Print transaction pool using a short format.
+.TP
+\fBprint_pool_stats\fR
+Print the transaction pool's statistics (number of transactions, memory size, fees, double spend attempts etc).
+
+
+.SS Transactions:
+
+.TP
+\fBprint_coinbase_tx_sum <start_height> [<block_count>]\fR
+Print the sum of coinbase transactions. Example:
+.br
+.B ./monerod print_coinbase_tx_sum 0 1000000000000
+
+.TP
+\fBprint_tx <transaction_hash> [+hex] [+json]\fR
+Print a given transaction as JSON and/or HEX.
+.TP
+\fBrelay_tx <txid>\fR
+Relay a given transaction by its <txid>, Useful if you want to rebroadcast the transaction for any reason or if transaction was previously created with “do_not_relay”:true.
+.TP
+\fBrpc_payments\fR
+Print information about RPC payments.
+
+
+.SS Blockchain:
+.TP
+\fBcheck_blockchain_pruning\fR
+Check the blockchain pruning.
+.TP
+\fBprune_blockchain [confirm]\fR
+Prune the blockchain.
+.TP
+\fBbc_dyn_stats <last_block_count>\fR
+Print the information about current blockchain dynamic state.
+.TP
+\fBsync_info\fR
+Print information about the blockchain sync state and connected peers along with download / upload stats.
+.TP
+\fBprint_height\fR
+Print the local blockchain height.
+.TP
+\fBprint_bc <begin_height> [<end_height>]\fR
+Print the blockchain info in range <begin_height>..<end_height>. The information will include block id, height, timestamp, version, size, weight, number of non-coinbase transactions, difficulty, nonce, and reward.
+.TP
+\fBprint_block <block_hash> | <block_height>\fR
+Print a given block using block height or hash.
+.TP
+\fBhard_fork_info <version>\fR
+Print the hard fork voting information. If given a version, prints whether is this version enabled.
+.TP
+\fBis_key_image_spent <key_image>\fR
+Print whether a given key image is in the spent key images set.
+.TP
+\fBpop_blocks <nblocks>\fR
+Remove blocks from end of blockchain
+.TP
+\fBalt_chain_info [blockhash]\fR
+Print the information about alternative chains.
+
+
+.SS Manage Daemon:
+.TP
+\fBset_bootstrap_daemon (auto | none | host[:port] [username] [password]) [proxy_ip:proxy_port]\fR
+URL of a 'bootstrap' remote daemon that the connected wallets can use while this daemon is still not fully synced.
+.br
+Use 'auto' to enable automatic public nodes discovering and bootstrap daemon switching.
+.TP
+\fBupdate (check|download)\fR
+Check if an update is available, optionally downloads it if there is. Updating is not yet implemented.
+.br
+The hash is SHA-256. On linux use sha256sum to verify, Check Example:
+.br
+.B ./monerod update check
+.br
+.B Update available: v0.13.0.4: https://downloads.getmonero.org/cli/monero-linux-x64-v0.13.0.4.tar.bz2, hash 693e1a0210201f65138ace679d1ab1928aca06bb6e679c20d8b4d2d8717e50d6
+.br
+Download Example:
+.br
+.B ./monerod update download
+.br
+.B Update downloaded to: /opt/monero-v0.13.0.2/monero-linux-x64-v0.13.0.4.tar.bz2
+.TP
+\fBexit | stop_daemon\fR
+Ask daemon to exit gracefully.
+.TP
+\fBset_log <level>|<{+,-,}categories>\fR
+Change the current log level/categories where <level> is a number 0-4.
+.TP
+\fBprint_status\fR
+Print the current daemon status.
+
+
+.SS Mining:
+.TP
+\fBdiff\fR
+Show the current block difficulty.
+.TP
+\fBhide_hr\fR
+Stop showing the current hash rate. (only if \fBmonerod\fR is mining.)
+.TP
+\fBshow_hr\fR
+Start showing the current hash rate. (only if \fBmonerod\fR is mining.)
+.TP
+\fBstart_mining <addr> [<threads>|auto] [do_background_mining] [ignore_battery]\fR
+Start mining for specified address. Defaults to 1 thread and no background mining. Use "auto" to autodetect optimal number of threads.
+.TP
+\fBmining_status\fR
+Show current mining status.
+.TP
+\fBstop_mining\fR
+Stop mining.
+
+
+.SS Legacy:
+.TP
+\fBsave\fR:
+Flush blockchain data to disk. no longer necessary as monerod saves the blockchain automatically on exit.
+.TP
+\fBoutput_histogram [@<amount>] <min_count> [<max_count>]\fR
+Print the output histogram for each amount denomination. This was only relevant in the pre-RingCT era. The old wallet used this to determine which outputs can be used for the requested mixin. With RingCT denominations are irrelevant as amounts are hidden.
+
+
+
+.SH JSON RPC
+Interacting with monerod over http using the JSON RPC.
+
+.SS
+
+
+
+
+
+
+.SH EXAMPLES
+
+.SS Change Log file:
+Full path to the log file. Example (mind file permissions):
+
+.B ./monerod --log-file=/var/log/monero/mainnet/monerod.log
+
+.SS Change PID:
+Full path to the PID file. Works only with --detach.
+
+.B ./monerod --detach --pidfile=/run/monero/monerod.pid
+
+.SS Pick Blockchain:
+
+You can run \fBmonerod\fR in two modes,
+.sp 2 
+stagenet for learning and experimentation.
+
+\fB\./monerod \--stagenet \--detach\fR        # run as a daemon in background
+.br
+\fBtail \-f ~/.bitmonero/stagenet/bitmonero.log\fR  # watch the logs
+.br
+\fB\./monerod \--stagenet exit\fR           # ask daemon to exit gracefully
+
+mainnet is when you want to deal with the real XMR.
+
+\fB\./monerod \--detach\fR        # run as a daemon in background
+.br
+\fBtail \-f ~/.bitmonero/bitmonero.log\fR  # watch the logs
+.br
+\fB\./monerod exit\fR           # ask daemon to exit gracefully
+
+
+.SS p2p network protocol over Tor via torsocks:
+.B DNS_PUBLIC=tcp://1.1.1.1 TORSOCKS_ALLOW_INBOUND=1 torsocks ./monerod --p2p-bind-ip 127.0.0.1  --no-igd  --hide-my-port
+
+
+.SS p2p custom bind port:
+TCP port to listen for p2p network connections. Defaults to 18080 for mainnet, 28080 for testnet, and 38080 for stagenet. You normally wouldn’t change that. This is helpful to run several nodes on your machine to simulate private Monero p2p network (likely using private Testnet).
+
+.B ./monerod --p2p-bind-port=48080
+
+.SS Adding multiple nodes:
+Specify list of nodes to connect to and then attempt to keep the connection open.
+
+.B ./monerod --add-priority-node=178.128.192.138:18081 --add-priority-node=144.76.202.167:18081
+
+Specify list of nodes to connect to only. Options --add-priority-node and --seed-node are ignored when using \fB--add-exclusive-node\fR.
+
+.B ./monerod --add-exclusive-node=178.128.192.138:18081 --add-exclusive-node=144.76.202.167:18081
+
+
+.SS Transactions over proxy:
+Send out your local transactions through SOCKS5 proxy (Tor or I2P). Format:
+.B <network-type>,<socks-ip:port>[,max_connections][,disable_noise]
+
+.B ./monerod --tx-proxy "tx-proxy=tor,127.0.0.1:9050,16"
+
+.SS Route incoming connections through your onionized P2P interface:
+Allow anonymous incoming connections to your onionized P2P interface. Format:
+.B <hidden-service-address>,<[bind-ip:]port>[,max_connections]
+
+.B ./monerod --anonymous-inbound "rveahdfho7wo4b2m.onion:18083,127.0.0.1:18083,100"
+
+.SS Proxy all connections:
+Network communication through proxy. Works with any service that supports SOCKS4, including Tor, i2p, and commercial VPN/proxy services. SOCKS5 support is anticipated in the future. Enabling this setting sends all traffic through this proxy. Can be used in conjunction with --tx-proxy, in which case transaction broadcasts originating from the connected wallet(s) will be sent through Tor or i2p as specified in --tx-proxy, and all other traffic will be sent through the SOCKS proxy. Format:
+.B <socks-ip:port>
+
+.B ./monerod --proxy "proxy=127.0.0.1:1080"
+
+.SS Blocks notify:
+Run a program for each new block. The <arg> must be a full path. If the <arg> contains %s it will be replaced by the block hash. Example:
+
+.B ./monerod --block-notify="/usr/bin/echo %s"
+
+Block notifications are good for immediate reaction. However, you should always assume you will miss some block notifications and you should independently poll the API to cover this up.
+
+Mind blockchain reorganizations. Block notifications can revert to same and past heights. Small reorganizations are natural and happen every day.
+
+
+.SS Change blocks sync size:
+How many blocks are processed in a single batch during chain synchronization. By default this is 20 blocks for newer history and 100 blocks for older history (“pre v4”). Default behavior is represented by value 0. Intuitively, the more resources you have, the bigger batch size you may want to try out.
+
+.B ./monerod --block-sync-size=500
+
+.SS bootstrap:
+The host:port of a “bootstrap” remote open node that the connected wallets can use while this node is still not fully synced. Example:
+
+.B ./monerod --bootstrap-daemon-address=opennode.xmr-tw.org:18089 
+
+The node will forward selected RPC calls to the bootstrap node. The wallet will handle this automatically and transparently. Obviously, such bootstraping phase has privacy implications similar to directly using a remote node.
+
+.SS Baning IPs:
+Specify ban list file, one IP address per line. This was introduced as an emergency measure to deal with large DDoS attacks on Monero p2p network in Dec 2020 / Jan 2021.
+
+.B ./monerod --ban-list=block.txt
+
+It is not recommended to statically ban any IP addresses unless you absolutely need to. Banning IPs often excludes the most vulnerable users who are forced to operate entirely behind Tor or other anonymity networks.
+
+
+.SH "Exit status:"
+.TP
+.B 0
+Always 0
+
+.SH Files
+
+.SS Logs:
+~/.bitmonero/bitmonero.log
+.br
+~/.bitmonero/testnet/bitmonero.log if 'testnet'
+.br
+~/.bitmonero/stagenet/bitmonero.log if 'stagenet'
+
+
+.SS Config:
+
+~/.bitmonero/bitmonero.conf
+.br
+~/.bitmonero/testnet/bitmonero.conf if 'testnet'
+.br
+~/.bitmonero/stagenet/bitmonero.conf if 'stagenet'
+
+.SS Data Dir:
+~/.bitmonero
+.br
+~/.bitmonero/testnet if 'testnet'
+.br
+~/.bitmonero/stagenet if 'stagenet'
+
+
+
+
 .SH AUTHOR
 Written by @Justxd22.
 .SH "REPORTING BUGS"
