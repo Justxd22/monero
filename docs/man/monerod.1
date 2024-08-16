@@ -13,6 +13,8 @@ It downloads and validates the blockchain from the p2p network.
 
 \fBmonerod\fR is entirely decoupled from your wallet.
 
+\fBmonerod\fR is mainly used by your wallet software over local RPC connection, as in \fBMonero GUI\fR.
+
 \fBmonerod\fR does not access your private keys \- it is not aware of your transactions and balance.
 
 This allows you to run \fBmonerod\fR on a separate computer or in the cloud.
@@ -20,6 +22,11 @@ This allows you to run \fBmonerod\fR on a separate computer or in the cloud.
 In fact, you can connect to a remote \fBmonerod\fR instance provided by a semi-trusted 3rd party. Such 3rd party will not be able to steal your funds. This is very handy for learning and experimentation.
 
 However, there are privacy and reliability implications to using a remote, untrusted node. For any real business you should be running your own full node.
+
+\fBmonerod\fR can save you time syncing the whole blockchain by relaying your wallet requests over p2p network nodes 
+.br
+by using \fB--bootstrap-daemon-address\fR see \fBmonerod Performance\fR section for more info.
+
 
 .SH Options:
 Arguments in brackets are default
@@ -118,6 +125,65 @@ Specify maximum log file size [B], Once log file grows past that limit, \fBmoner
 \fB\--max-log-files\fR arg (=50)
 Specify maximum number of rotated log
 files to be saved (no limit by setting to 0)
+
+
+.SS monerod Performance:
+.TP
+\fB\--sync-pruned-blocks\fR
+Allow syncing from nodes with only pruned blocks
+.TP
+\fB\--prune-blockchain\fR
+Prune blockchain
+.TP
+\fB\--db-sync-mode\fR arg (=fast:async:250000000bytes)
+Specify sync option, using format [safe|fast|fastest]:[sync|async]:[<nblocks_per_sync>[blocks]|<nbytes_per_sync> [bytes]].
+.TP
+\fB\--max-concurrency\fR arg (=0)
+Max number of threads to use for a parallel job
+.TP
+\fB\--prep-blocks-threads\fR arg (=4)
+Max number of threads to use when preparing block hashes in groups.
+.TP
+\fB\--fast-block-sync\fR arg (=1)
+Sync up most of the way by using embedded, known block hashes.
+.TP
+\fB\--block-sync-size\fR arg (=0)
+How many blocks to sync at once during chain synchronization (0 = adaptive).
+.TP
+\fB\--block-download-max-size\fR arg (=0)
+Set maximum size of block download queue in bytes (0 for default)
+.TP
+\fB\--no-sync\fR                   
+Don't synchronize the blockchain with other peers, intended to be used with \fB\--bootstrap-daemon-address\fR allowing reliance on other public P2P nodes for blockchain data.
+
+When a monerod process is in \fB\--no-sync\fR mode, virtually all data requests are forwarded to the bootstrap node, as the local node does not have synchronized block data.
+
+This flag is enabled in Simple GUI Mode.
+.TP
+\fB\--bootstrap-daemon-address\fR arg
+URL of a 'bootstrap' remote daemon that the connected wallets can use while this daemon is still not fully synced. Use 'auto' to enable automatic public nodes discovering and bootstrap daemon switching,
+
+When core RPC server with a bootstrap daemon receives an RPC request, in which block data requested is unsynced, it forwards the request to the bootstrap daemon. In this manner, you can seamlessly interact with an \fBunsynced monerod process\fR as if it was fully synced with the network.
+
+In Monero GUI Simple Mode and Simple Bootstrap GUI Mode this is set to auto (automatic public nodes discovering and bootstrap daemon switching)
+.TP
+\fB\--bootstrap-daemon-login\fR arg
+Specify username:password for the bootstrap daemon login
+.TP
+\fB\--bootstrap-daemon-proxy\fR arg <ip>:<port> 
+socks proxy to use for bootstrap daemon connections
+.TP
+\fB\--show-time-stats\fR arg (=0)
+Show time-stats when processing blocks/txs and disk synchronization.
+.TP
+\fB\--extra-messages-file\fR arg
+Specify file for extra messages to include into coinbase transactions
+.TP
+\fB\--db-salvage\fR
+Try to salvage a blockchain database if it seems corrupted
+.TP
+\fB\--tos-flag\fR arg (=-1)
+set TOS flag
 
 
 .SS P2P network:
@@ -298,56 +364,6 @@ Run a program for each reorg, '%s' will be replaced by the split height, '%h' wi
 and '%d' will be replaced by the number of blocks discarded from the old chain
 
 
-.SS monerod Performance:
-.TP
-\fB\--sync-pruned-blocks\fR
-Allow syncing from nodes with only pruned blocks
-.TP
-\fB\--prune-blockchain\fR
-Prune blockchain
-.TP
-\fB\--db-sync-mode\fR arg (=fast:async:250000000bytes)
-Specify sync option, using format [safe|fast|fastest]:[sync|async]:[<nblocks_per_sync>[blocks]|<nbytes_per_sync> [bytes]].
-.TP
-\fB\--max-concurrency\fR arg (=0)
-Max number of threads to use for a parallel job
-.TP
-\fB\--prep-blocks-threads\fR arg (=4)
-Max number of threads to use when preparing block hashes in groups.
-.TP
-\fB\--fast-block-sync\fR arg (=1)
-Sync up most of the way by using embedded, known block hashes.
-.TP
-\fB\--block-sync-size\fR arg (=0)
-How many blocks to sync at once during chain synchronization (0 = adaptive).
-.TP
-\fB\--block-download-max-size\fR arg (=0)
-Set maximum size of block download queue in bytes (0 for default)
-.TP
-\fB\--no-sync\fR                   
-Don't synchronize the blockchain with other peers
-.TP
-\fB\--bootstrap-daemon-address\fR arg
-URL of a 'bootstrap' remote daemon that the connected wallets can use while this daemon is still not fully synced. Use 'auto' to enable automatic public
-nodes discovering and bootstrap daemon switching
-.TP
-\fB\--bootstrap-daemon-login\fR arg
-Specify username:password for the bootstrap daemon login
-.TP
-\fB\--bootstrap-daemon-proxy\fR arg <ip>:<port> 
-socks proxy to use for bootstrap daemon connections
-.TP
-\fB\--show-time-stats\fR arg (=0)
-Show time-stats when processing blocks/txs and disk synchronization.
-.TP
-\fB\--extra-messages-file\fR arg
-Specify file for extra messages to include into coinbase transactions
-.TP
-\fB\--db-salvage\fR
-Try to salvage a blockchain database if it seems corrupted
-.TP
-\fB\--tos-flag\fR arg (=-1)
-set TOS flag
 
 
 .SS Mining
